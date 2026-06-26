@@ -17,6 +17,12 @@ const LCAI_CHAIN = {
   nativeCurrency: { name: 'LCAI', symbol: 'LCAI', decimals: 18 },
 };
 
+const RESTRICTED_COUNTRIES = ['US', 'GB', 'FR', 'NL', 'AU', 'SG', 'CY'];
+const RESTRICTED_NAMES = {
+  US: 'United States', GB: 'United Kingdom', FR: 'France',
+  NL: 'Netherlands', AU: 'Australia', SG: 'Singapore', CY: 'Cyprus',
+};
+
 const SUITS = ['♠', '♥', '♦', '♣'];
 const VALUES = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
@@ -46,67 +52,71 @@ function cardValue(card) {
 }
 
 function handTotal(cards) {
-  let total = 0;
-  let aces = 0;
+  let total = 0; let aces = 0;
   for (const card of cards) {
     const v = cardValue(card);
     if (card.value === 'A') aces++;
     total += v;
   }
-  while (total > 21 && aces > 0) {
-    total -= 10;
-    aces--;
-  }
+  while (total > 21 && aces > 0) { total -= 10; aces--; }
   return total;
 }
 
 function getResultObj(pCards, dCards, betAmount) {
-  const pTotal = handTotal(pCards);
-  const dTotal = handTotal(dCards);
+  const pTotal = handTotal(pCards); const dTotal = handTotal(dCards);
   const playerBJ = pTotal === 21 && pCards.length === 2;
   const dealerBJ = dTotal === 21 && dCards.length === 2;
-  let payout = 0;
-  let label, color, sub;
-  if (playerBJ && dealerBJ) {
-    label = '🔄 PUSH'; color = '#00aaff'; sub = 'Bet returned'; payout = betAmount;
-  } else if (playerBJ) {
-    payout = betAmount + betAmount * 1.5;
-    label = '🃏 BLACKJACK!'; color = '#ffd700'; sub = `+${(betAmount * 1.5).toFixed(2)} LCAI`;
-  } else if (pTotal > 21) {
-    label = '💀 BUST'; color = '#ff2244'; sub = `Lost ${betAmount.toFixed(2)} LCAI`; payout = 0;
-  } else if (dTotal > 21) {
-    payout = betAmount * 2;
-    label = '⚡ DEALER BUSTS!'; color = '#00ff88'; sub = `+${betAmount.toFixed(2)} LCAI`;
-  } else if (pTotal > dTotal) {
-    payout = betAmount * 2;
-    label = '⚡ YOU WIN!'; color = '#00ff88'; sub = `+${betAmount.toFixed(2)} LCAI`;
-  } else if (pTotal === dTotal) {
-    label = '🔄 PUSH'; color = '#00aaff'; sub = 'Bet returned'; payout = betAmount;
-  } else {
-    label = '💀 YOU LOSE'; color = '#ff2244'; sub = `Lost ${betAmount.toFixed(2)} LCAI`; payout = 0;
-  }
+  let payout = 0; let label, color, sub;
+  if (playerBJ && dealerBJ) { label = '🔄 PUSH'; color = '#00aaff'; sub = 'Bet returned'; payout = betAmount; }
+  else if (playerBJ) { payout = betAmount + betAmount * 1.5; label = '🃏 BLACKJACK!'; color = '#ffd700'; sub = `+${(betAmount * 1.5).toFixed(2)} LCAI`; }
+  else if (pTotal > 21) { label = '💀 BUST'; color = '#ff2244'; sub = `Lost ${betAmount.toFixed(2)} LCAI`; payout = 0; }
+  else if (dTotal > 21) { payout = betAmount * 2; label = '⚡ DEALER BUSTS!'; color = '#00ff88'; sub = `+${betAmount.toFixed(2)} LCAI`; }
+  else if (pTotal > dTotal) { payout = betAmount * 2; label = '⚡ YOU WIN!'; color = '#00ff88'; sub = `+${betAmount.toFixed(2)} LCAI`; }
+  else if (pTotal === dTotal) { label = '🔄 PUSH'; color = '#00aaff'; sub = 'Bet returned'; payout = betAmount; }
+  else { label = '💀 YOU LOSE'; color = '#ff2244'; sub = `Lost ${betAmount.toFixed(2)} LCAI`; payout = 0; }
   return { label, color, sub, payout };
 }
 
 const GAME_STATE = { IDLE: 'idle', PLAYING: 'playing', SPLIT_PLAYING: 'split_playing', FINISHED: 'finished' };
 
 const NeonPanel = ({ flip }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2rem', padding: '2rem 0.5rem' }}>
-    <div style={{ width: '8px', height: '100px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse1 1.8s ease-in-out infinite' }} />
-    <div style={{ width: '24px', height: '24px', background: '#aa00ff', transform: 'rotate(45deg)', borderRadius: '3px', animation: 'neonPulse2 1.2s ease-in-out infinite' }} />
-    <div style={{ width: '8px', height: '70px', background: 'linear-gradient(180deg, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse2 2.1s ease-in-out infinite' }} />
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '1.5rem 0.5rem' }}>
+    {/* Top tube purple */}
+    <div style={{ width: '8px', height: '80px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff)', borderRadius: '4px', animation: 'neonPulse1 1.8s ease-in-out infinite' }} />
+    {/* Diamond purple */}
+    <div style={{ width: '22px', height: '22px', background: '#aa00ff', transform: 'rotate(45deg)', borderRadius: '3px', animation: 'neonPulse2 1.2s ease-in-out infinite' }} />
+    {/* Spade */}
     <div style={{ fontSize: '1.8rem', color: '#aa00ff', animation: flip ? 'neonPulse2 2.3s ease-in-out infinite' : 'neonPulse1 2.3s ease-in-out infinite', textShadow: '0 0 10px #aa00ff, 0 0 20px #aa00ff' }}>♠</div>
-    <div style={{ width: '30px', height: '30px', borderRadius: '50%', border: '4px solid #cc00ff', animation: 'neonPulse3 1.5s ease-in-out infinite' }} />
+    {/* Orange tube */}
+    <div style={{ width: '8px', height: '60px', background: 'linear-gradient(180deg, #ff6600, #ffaa00)', borderRadius: '4px', animation: 'neonOrange1 2s ease-in-out infinite' }} />
+    {/* Circle pink */}
+    <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: '4px solid #cc00ff', animation: 'neonPulse3 1.5s ease-in-out infinite' }} />
+    {/* Heart */}
     <div style={{ fontSize: '1.8rem', color: '#ff00ff', animation: flip ? 'neonPulse1 1.7s ease-in-out infinite' : 'neonPulse2 1.7s ease-in-out infinite', textShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff' }}>♥</div>
-    <div style={{ width: '8px', height: '90px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff, #cc00ff)', borderRadius: '4px', animation: 'neonPulse3 1.9s ease-in-out infinite' }} />
+    {/* Orange diamond shape */}
+    <div style={{ width: '20px', height: '20px', background: '#ff6600', transform: 'rotate(45deg)', borderRadius: '2px', animation: 'neonOrange2 1.4s ease-in-out infinite' }} />
+    {/* Purple tube */}
+    <div style={{ width: '8px', height: '70px', background: 'linear-gradient(180deg, #ff00ff, #aa00ff, #cc00ff)', borderRadius: '4px', animation: 'neonPulse3 1.9s ease-in-out infinite' }} />
+    {/* Diamond suit */}
     <div style={{ fontSize: '1.8rem', color: '#cc00ff', animation: 'neonFlicker 3s ease-in-out infinite', textShadow: '0 0 10px #cc00ff, 0 0 20px #cc00ff' }}>♦</div>
-    <div style={{ width: '0', height: '0', borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderBottom: '22px solid #aa00ff', filter: 'drop-shadow(0 0 6px #aa00ff)', animation: 'neonPulse2 1.4s ease-in-out infinite' }} />
+    {/* Orange tube tall */}
+    <div style={{ width: '8px', height: '90px', background: 'linear-gradient(180deg, #ffaa00, #ff6600, #ffaa00)', borderRadius: '4px', animation: 'neonOrange1 2.5s ease-in-out infinite' }} />
+    {/* Triangle purple */}
+    <div style={{ width: 0, height: 0, borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderBottom: '22px solid #aa00ff', filter: 'drop-shadow(0 0 6px #aa00ff)', animation: 'neonPulse2 1.4s ease-in-out infinite' }} />
+    {/* Club */}
     <div style={{ fontSize: '1.8rem', color: '#aa00ff', animation: flip ? 'neonPulse2 2s ease-in-out infinite' : 'neonPulse3 2s ease-in-out infinite', textShadow: '0 0 10px #aa00ff, 0 0 20px #aa00ff' }}>♣</div>
-    <div style={{ width: '8px', height: '100px', background: 'linear-gradient(180deg, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse1 2.5s ease-in-out infinite' }} />
+    {/* Orange circle */}
+    <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '4px solid #ff6600', animation: 'neonOrange2 1.8s ease-in-out infinite' }} />
+    {/* Bottom tube purple */}
+    <div style={{ width: '8px', height: '80px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff)', borderRadius: '4px', animation: 'neonPulse1 2.2s ease-in-out infinite' }} />
+    {/* Bottom orange tube */}
+    <div style={{ width: '8px', height: '60px', background: 'linear-gradient(180deg, #ff6600, #ffcc00)', borderRadius: '4px', animation: 'neonOrange1 1.6s ease-in-out infinite' }} />
   </div>
 );
 
 export default function App() {
+  const [geoWarning, setGeoWarning] = useState(null); // null = checking, false = clear, string = country name
+  const [geoChecked, setGeoChecked] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [ageCheck, setAgeCheck] = useState(false);
   const [entertainmentCheck, setEntertainmentCheck] = useState(false);
@@ -137,19 +147,33 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (results) {
-      setGlitch(true);
-      setTimeout(() => setGlitch(false), 600);
-    }
+    if (results) { setGlitch(true); setTimeout(() => setGlitch(false), 600); }
   }, [results]);
+
+  // Geolocation check
+  useEffect(() => {
+    fetch('https://ipapi.co/json/')
+      .then(r => r.json())
+      .then(data => {
+        const code = data.country_code;
+        if (RESTRICTED_COUNTRIES.includes(code)) {
+          setGeoWarning(RESTRICTED_NAMES[code] || code);
+        } else {
+          setGeoWarning(false);
+        }
+        setGeoChecked(true);
+      })
+      .catch(() => {
+        setGeoWarning(false);
+        setGeoChecked(true);
+      });
+  }, []);
 
   const fetchBalances = useCallback(async (ct, address) => {
     try {
       const pb = await ct.getPlayerBalance(address);
       setSessionBalance(parseFloat(formatEther(pb)).toFixed(2));
-    } catch (err) {
-      console.error('fetchBalances error:', err);
-    }
+    } catch (err) { console.error('fetchBalances error:', err); }
   }, []);
 
   const connectWallet = async () => {
@@ -169,41 +193,32 @@ export default function App() {
       setWalletAddress(accounts[0]);
       setContract(ct);
       await fetchBalances(ct, accounts[0]);
-    } catch (err) {
-      setStatus('Error: ' + err.message);
-    }
+    } catch (err) { setStatus('Error: ' + err.message); }
   };
 
   const doDeposit = async () => {
     if (!contract) return;
-    setLoading(true);
-    setStatus('Confirm deposit in MetaMask...');
+    setLoading(true); setStatus('Confirm deposit in MetaMask...');
     try {
       const tx = await contract.deposit({ value: parseEther(depositAmount) });
       setStatus('Depositing...');
       await tx.wait();
       await fetchBalances(contract, walletAddress);
-      setStatus('');
-      setScreen('game');
-    } catch (err) {
-      setStatus('Error: ' + (err.reason || err.message));
-    }
+      setStatus(''); setScreen('game');
+    } catch (err) { setStatus('Error: ' + (err.reason || err.message)); }
     setLoading(false);
   };
 
   const doCashOut = async () => {
     if (!contract) return;
-    setLoading(true);
-    setStatus('Cashing out...');
+    setLoading(true); setStatus('Cashing out...');
     try {
       const tx = await contract.cashOut();
       await tx.wait();
       await fetchBalances(contract, walletAddress);
       setStatus('Cashed out! Funds sent to your wallet.');
       setTimeout(() => setStatus(''), 3000);
-    } catch (err) {
-      setStatus('Error: ' + (err.reason || err.message));
-    }
+    } catch (err) { setStatus('Error: ' + (err.reason || err.message)); }
     setLoading(false);
   };
 
@@ -212,8 +227,7 @@ export default function App() {
     if (betNum > parseFloat(sessionBalance)) { setStatus('Insufficient session balance.'); return; }
     setResults(null); setStatus(''); setSplitCards(null); setActiveHand(0);
     const newDeck = createDeck();
-    const p = [newDeck[0], newDeck[2]];
-    const d = [newDeck[1], newDeck[3]];
+    const p = [newDeck[0], newDeck[2]]; const d = [newDeck[1], newDeck[3]];
     const remaining = newDeck.slice(4);
     setDeck(remaining); setPlayerCards(p); setDealerCards(d);
     setCurrentBet(betNum); setGameState(GAME_STATE.PLAYING);
@@ -289,90 +303,22 @@ export default function App() {
   const bothChecked = ageCheck && entertainmentCheck;
 
   const S = {
-    app: {
-      minHeight: '100vh', background: '#050510', color: '#e0e0ff',
-      fontFamily: "'Courier New', monospace", display: 'flex', flexDirection: 'column',
-      alignItems: 'center', padding: '1rem', position: 'relative', overflow: 'hidden',
-    },
-    scanlines: {
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)',
-      pointerEvents: 'none', zIndex: 999,
-    },
-    grid: {
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundImage: 'linear-gradient(rgba(0,255,200,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,200,0.03) 1px, transparent 1px)',
-      backgroundSize: '40px 40px', pointerEvents: 'none', zIndex: 0,
-    },
-    section: {
-      background: 'rgba(0,0,20,0.8)', border: '1px solid rgba(255,0,255,0.3)',
-      borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1rem',
-      width: '100%', maxWidth: '600px', position: 'relative', zIndex: 1,
-      boxShadow: '0 0 20px rgba(255,0,255,0.1), inset 0 0 20px rgba(0,0,20,0.5)',
-    },
-    activeSection: {
-      background: 'rgba(0,0,20,0.8)', border: '2px solid #00ffcc',
-      borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1rem',
-      width: '100%', maxWidth: '600px', position: 'relative', zIndex: 1,
-      boxShadow: '0 0 20px rgba(0,255,200,0.2)',
-    },
-    sectionLabel: {
-      color: '#00ffcc', fontSize: '0.7rem', letterSpacing: '4px',
-      textTransform: 'uppercase', textShadow: '0 0 8px #00ffcc', marginBottom: '0.5rem',
-    },
-    card: {
-      background: 'rgba(255,255,255,0.95)', borderRadius: '8px',
-      width: '60px', height: '90px', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: 900,
-      boxShadow: '0 0 15px rgba(255,0,255,0.5), 0 0 30px rgba(0,255,200,0.3)',
-      border: '2px solid rgba(255,0,255,0.5)', flexShrink: 0,
-    },
-    hiddenCard: {
-      background: 'linear-gradient(135deg, #1a0033, #000066)', borderRadius: '8px',
-      width: '60px', height: '90px', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', fontSize: '1.5rem',
-      boxShadow: '0 0 15px rgba(255,0,255,0.5)', border: '2px solid rgba(0,255,200,0.5)', flexShrink: 0,
-    },
+    app: { minHeight: '100vh', background: '#050510', color: '#e0e0ff', fontFamily: "'Courier New', monospace", display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem', position: 'relative', overflow: 'hidden' },
+    scanlines: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)', pointerEvents: 'none', zIndex: 999 },
+    grid: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(0,255,200,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,200,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none', zIndex: 0 },
+    section: { background: 'rgba(0,0,20,0.8)', border: '1px solid rgba(255,0,255,0.3)', borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1rem', width: '100%', maxWidth: '600px', position: 'relative', zIndex: 1, boxShadow: '0 0 20px rgba(255,0,255,0.1), inset 0 0 20px rgba(0,0,20,0.5)' },
+    activeSection: { background: 'rgba(0,0,20,0.8)', border: '2px solid #00ffcc', borderRadius: '12px', padding: '1rem 1.5rem', marginBottom: '1rem', width: '100%', maxWidth: '600px', position: 'relative', zIndex: 1, boxShadow: '0 0 20px rgba(0,255,200,0.2)' },
+    sectionLabel: { color: '#00ffcc', fontSize: '0.7rem', letterSpacing: '4px', textTransform: 'uppercase', textShadow: '0 0 8px #00ffcc', marginBottom: '0.5rem' },
+    card: { background: 'rgba(255,255,255,0.95)', borderRadius: '8px', width: '60px', height: '90px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', fontWeight: 900, boxShadow: '0 0 15px rgba(255,0,255,0.5), 0 0 30px rgba(0,255,200,0.3)', border: '2px solid rgba(255,0,255,0.5)', flexShrink: 0 },
+    hiddenCard: { background: 'linear-gradient(135deg, #1a0033, #000066)', borderRadius: '8px', width: '60px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', boxShadow: '0 0 15px rgba(255,0,255,0.5)', border: '2px solid rgba(0,255,200,0.5)', flexShrink: 0 },
     cardRow: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', margin: '0.5rem 0' },
     total: { color: '#ffd700', fontSize: '1.5rem', fontWeight: 900, textShadow: '0 0 10px #ffd700', textAlign: 'center', marginTop: '0.5rem' },
-    btn: (color, disabled) => ({
-      background: disabled ? 'rgba(255,255,255,0.05)' : 'transparent',
-      border: `2px solid ${disabled ? '#333' : color}`,
-      color: disabled ? '#444' : color, borderRadius: '6px',
-      padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 900,
-      letterSpacing: '3px', textTransform: 'uppercase', cursor: disabled ? 'default' : 'pointer',
-      textShadow: disabled ? 'none' : `0 0 10px ${color}`,
-      boxShadow: disabled ? 'none' : `0 0 15px ${color}33, inset 0 0 15px ${color}11`,
-      transition: 'all 0.2s', flex: 1, minWidth: '100px',
-    }),
-    betBtn: (active) => ({
-      background: active ? 'rgba(255,0,255,0.2)' : 'transparent',
-      border: `2px solid ${active ? '#ff00ff' : '#333'}`,
-      color: active ? '#ff00ff' : '#666', borderRadius: '6px',
-      padding: '0.5rem 1.5rem', fontSize: '1rem', fontWeight: 900, cursor: 'pointer',
-      textShadow: active ? '0 0 10px #ff00ff' : 'none',
-      boxShadow: active ? '0 0 15px #ff00ff33' : 'none', letterSpacing: '2px',
-    }),
-    input: {
-      background: 'rgba(0,0,0,0.4)', border: '2px solid rgba(255,0,255,0.3)',
-      borderRadius: '6px', padding: '0.75rem 1rem', color: '#ff00ff',
-      fontSize: '1.1rem', fontWeight: 900, width: '100%', boxSizing: 'border-box',
-      textAlign: 'center', letterSpacing: '2px', outline: 'none', fontFamily: "'Courier New', monospace",
-    },
-    resultOverlay: {
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'rgba(0,0,10,0.85)', zIndex: 500,
-      flexDirection: 'column', gap: '1rem', cursor: 'pointer',
-    },
+    btn: (color, disabled) => ({ background: disabled ? 'rgba(255,255,255,0.05)' : 'transparent', border: `2px solid ${disabled ? '#333' : color}`, color: disabled ? '#444' : color, borderRadius: '6px', padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 900, letterSpacing: '3px', textTransform: 'uppercase', cursor: disabled ? 'default' : 'pointer', textShadow: disabled ? 'none' : `0 0 10px ${color}`, boxShadow: disabled ? 'none' : `0 0 15px ${color}33, inset 0 0 15px ${color}11`, transition: 'all 0.2s', flex: 1, minWidth: '100px' }),
+    betBtn: (active) => ({ background: active ? 'rgba(255,0,255,0.2)' : 'transparent', border: `2px solid ${active ? '#ff00ff' : '#333'}`, color: active ? '#ff00ff' : '#666', borderRadius: '6px', padding: '0.5rem 1.5rem', fontSize: '1rem', fontWeight: 900, cursor: 'pointer', textShadow: active ? '0 0 10px #ff00ff' : 'none', boxShadow: active ? '0 0 15px #ff00ff33' : 'none', letterSpacing: '2px' }),
+    input: { background: 'rgba(0,0,0,0.4)', border: '2px solid rgba(255,0,255,0.3)', borderRadius: '6px', padding: '0.75rem 1rem', color: '#ff00ff', fontSize: '1.1rem', fontWeight: 900, width: '100%', boxSizing: 'border-box', textAlign: 'center', letterSpacing: '2px', outline: 'none', fontFamily: "'Courier New', monospace" },
+    resultOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,10,0.85)', zIndex: 500, flexDirection: 'column', gap: '1rem', cursor: 'pointer' },
     checkRow: { display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1rem', cursor: 'pointer' },
-    checkbox: (checked) => ({
-      width: '20px', height: '20px', flexShrink: 0, marginTop: '2px',
-      border: `2px solid ${checked ? '#00ffcc' : '#444'}`, borderRadius: '4px',
-      background: checked ? 'rgba(0,255,200,0.2)' : 'transparent',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      cursor: 'pointer', transition: 'all 0.2s', boxShadow: checked ? '0 0 10px #00ffcc55' : 'none',
-    }),
+    checkbox: (checked) => ({ width: '20px', height: '20px', flexShrink: 0, marginTop: '2px', border: `2px solid ${checked ? '#00ffcc' : '#444'}`, borderRadius: '4px', background: checked ? 'rgba(0,255,200,0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', boxShadow: checked ? '0 0 10px #00ffcc55' : 'none' }),
   };
 
   const mainContent = (
@@ -387,6 +333,20 @@ export default function App() {
             </div>
           ))}
           <div style={{ color: '#666', fontSize: '0.75rem', letterSpacing: '2px', marginTop: '1rem' }}>TAP TO CONTINUE</div>
+        </div>
+      )}
+
+      {/* Geo warning overlay */}
+      {geoChecked && geoWarning && (
+        <div style={{ ...S.section, border: '1px solid rgba(255,170,0,0.5)', background: 'rgba(20,10,0,0.9)', textAlign: 'center', marginBottom: '1rem' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⚠️</div>
+          <div style={{ color: '#ffaa00', fontSize: '0.8rem', letterSpacing: '3px', fontWeight: 900, marginBottom: '0.75rem', textShadow: '0 0 8px #ffaa00' }}>REGIONAL RESTRICTION DETECTED</div>
+          <div style={{ color: '#888', fontSize: '0.75rem', letterSpacing: '1px', lineHeight: '1.7', marginBottom: '1rem' }}>
+            Your location (<span style={{ color: '#ffaa00' }}>{geoWarning}</span>) may have restrictions on online gambling. By continuing you confirm that online gambling is legal in your jurisdiction and that you accept full responsibility for compliance with your local laws.
+          </div>
+          <button onClick={() => setGeoWarning(false)} style={{ ...S.btn('#ffaa00', false), flex: 'none', width: '100%' }}>
+            I UNDERSTAND — CONTINUE
+          </button>
         </div>
       )}
 
@@ -524,15 +484,14 @@ export default function App() {
     <div style={S.app}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.85} }
-        @keyframes glitch {
-          0%{transform:translate(2px,0) skew(1deg)} 25%{transform:translate(-2px,0) skew(-1deg)}
-          50%{transform:translate(0,2px)} 75%{transform:translate(0,-2px) skew(0.5deg)} 100%{transform:translate(2px,0)}
-        }
+        @keyframes glitch { 0%{transform:translate(2px,0) skew(1deg)} 25%{transform:translate(-2px,0) skew(-1deg)} 50%{transform:translate(0,2px)} 75%{transform:translate(0,-2px) skew(0.5deg)} 100%{transform:translate(2px,0)} }
         @keyframes scanMove { 0%{top:0} 100%{top:100%} }
         @keyframes neonPulse1 { 0%,100%{opacity:1;box-shadow:0 0 8px #aa00ff,0 0 20px #aa00ff,0 0 40px #aa00ff} 50%{opacity:0.4;box-shadow:0 0 4px #aa00ff,0 0 8px #aa00ff} }
         @keyframes neonPulse2 { 0%,100%{opacity:0.4;box-shadow:0 0 4px #ff00ff,0 0 8px #ff00ff} 50%{opacity:1;box-shadow:0 0 8px #ff00ff,0 0 20px #ff00ff,0 0 40px #ff00ff} }
         @keyframes neonPulse3 { 0%,100%{opacity:1;box-shadow:0 0 8px #cc00ff,0 0 20px #cc00ff} 33%{opacity:0.3} 66%{opacity:0.8} }
         @keyframes neonFlicker { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.2} 94%{opacity:1} 97%{opacity:0.4} 98%{opacity:1} }
+        @keyframes neonOrange1 { 0%,100%{opacity:1;box-shadow:0 0 8px #ff6600,0 0 20px #ff6600,0 0 40px #ff6600} 50%{opacity:0.3;box-shadow:0 0 4px #ff6600,0 0 8px #ff6600} }
+        @keyframes neonOrange2 { 0%,100%{opacity:0.3;box-shadow:0 0 4px #ffaa00,0 0 8px #ffaa00} 50%{opacity:1;box-shadow:0 0 8px #ffaa00,0 0 20px #ffaa00,0 0 40px #ffaa00} }
         button:hover:not(:disabled) { filter: brightness(1.3); transform: scale(1.03); }
       `}</style>
 
@@ -540,30 +499,18 @@ export default function App() {
       <div style={S.grid} />
       <div style={{ position: 'fixed', left: 0, right: 0, height: '2px', background: 'rgba(0,255,200,0.15)', animation: 'scanMove 4s linear infinite', pointerEvents: 'none', zIndex: 998 }} />
 
-      {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '1rem', position: 'relative', zIndex: 1 }}>
         <h1 style={{ fontSize: 'clamp(2rem, 6vw, 4rem)', fontWeight: 900, letterSpacing: '8px', textTransform: 'uppercase', color: '#ff00ff', margin: 0, textShadow: '0 0 10px #ff00ff, 0 0 30px #ff00ff, 0 0 60px #ff00aa', animation: 'pulse 2s infinite' }}>FrankenBet</h1>
         <div style={{ color: '#00ffcc', letterSpacing: '6px', fontSize: '0.75rem', textShadow: '0 0 10px #00ffcc', marginTop: '0.25rem' }}>◈ BLACKJACK ◈ LIGHTCHAIN AI ◈</div>
       </div>
 
       {mobile ? (
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          {mainContent}
-        </div>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>{mainContent}</div>
       ) : (
-        <div style={{ display: 'flex', width: '100%', maxWidth: '1100px', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center' }}>
-          {/* Left neons */}
-          <div style={{ width: '70px', flexShrink: 0, position: 'sticky', top: '1rem' }}>
-            <NeonPanel flip={false} />
-          </div>
-          {/* Centre game */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
-            {mainContent}
-          </div>
-          {/* Right neons */}
-          <div style={{ width: '70px', flexShrink: 0, position: 'sticky', top: '1rem' }}>
-            <NeonPanel flip={true} />
-          </div>
+        <div style={{ display: 'flex', width: '100%', maxWidth: '1200px', gap: '0.5rem', alignItems: 'flex-start', justifyContent: 'center' }}>
+          <div style={{ width: '80px', flexShrink: 0, position: 'sticky', top: '1rem' }}><NeonPanel flip={false} /></div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>{mainContent}</div>
+          <div style={{ width: '80px', flexShrink: 0, position: 'sticky', top: '1rem' }}><NeonPanel flip={true} /></div>
         </div>
       )}
 
