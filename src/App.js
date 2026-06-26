@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserProvider, Contract, parseEther, formatEther } from 'ethers';
-import frankenLogo from './frankenlabs_logo.png';
 
 const CONTRACT_ADDRESS = '0xc486811E21E680AfdA637B477406C42d76b88959';
 
@@ -91,103 +90,19 @@ function getResultObj(pCards, dCards, betAmount) {
 
 const GAME_STATE = { IDLE: 'idle', PLAYING: 'playing', SPLIT_PLAYING: 'split_playing', FINISHED: 'finished' };
 
-// Franken dealer SVG suit body
-const FrankenDealer = ({ logoSrc }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '160px' }}>
-    {/* Head */}
-    <img src={logoSrc} alt="FrankenDealer" style={{ width: '120px', height: '120px', borderRadius: '50%', border: '3px solid #aa00ff', boxShadow: '0 0 20px #aa00ff, 0 0 40px #aa00ff55', zIndex: 2, position: 'relative' }} />
-    {/* Neck */}
-    <div style={{ width: '28px', height: '18px', background: 'linear-gradient(180deg, #1a0a2a, #0d0d2a)', border: '1px solid #aa00ff55', marginTop: '-2px' }} />
-    {/* Suit body SVG */}
-    <svg width="160" height="220" viewBox="0 0 160 220" style={{ marginTop: '-2px', filter: 'drop-shadow(0 0 8px #aa00ff55)' }}>
-      {/* Shirt */}
-      <rect x="45" y="0" width="70" height="120" rx="4" fill="#0a0a1a" />
-      {/* Left lapel */}
-      <polygon points="80,0 45,0 45,60 80,30" fill="#1a0a2a" stroke="#aa00ff" strokeWidth="1" />
-      {/* Right lapel */}
-      <polygon points="80,0 115,0 115,60 80,30" fill="#1a0a2a" stroke="#aa00ff" strokeWidth="1" />
-      {/* Tie */}
-      <polygon points="80,10 72,35 75,90 80,100 85,90 88,35" fill="#ff00ff" opacity="0.9" />
-      <polygon points="80,10 74,28 80,32 86,28" fill="#cc00cc" />
-      {/* Tie glow */}
-      <polygon points="80,10 72,35 75,90 80,100 85,90 88,35" fill="none" stroke="#ff00ff" strokeWidth="0.5" opacity="0.6" />
-      {/* Left arm */}
-      <rect x="5" y="5" width="40" height="18" rx="9" fill="#1a0a2a" stroke="#aa00ff" strokeWidth="1" />
-      {/* Right arm */}
-      <rect x="115" y="5" width="40" height="18" rx="9" fill="#1a0a2a" stroke="#aa00ff" strokeWidth="1" />
-      {/* Left sleeve cuff */}
-      <rect x="5" y="16" width="18" height="8" rx="3" fill="#0a0a1a" stroke="#aa00ff55" strokeWidth="1" />
-      {/* Right sleeve cuff */}
-      <rect x="137" y="16" width="18" height="8" rx="3" fill="#0a0a1a" stroke="#aa00ff55" strokeWidth="1" />
-      {/* Suit jacket left */}
-      <polygon points="45,0 10,10 10,120 55,120 55,60" fill="#120820" stroke="#aa00ff" strokeWidth="1" />
-      {/* Suit jacket right */}
-      <polygon points="115,0 150,10 150,120 105,120 105,60" fill="#120820" stroke="#aa00ff" strokeWidth="1" />
-      {/* Pocket square left */}
-      <polygon points="22,45 35,45 32,55 19,55" fill="#ff00ff" opacity="0.7" />
-      {/* Button 1 */}
-      <circle cx="80" cy="108" r="3" fill="#aa00ff" opacity="0.8" />
-      {/* Button 2 */}
-      <circle cx="80" cy="116" r="3" fill="#aa00ff" opacity="0.8" />
-      {/* Pants */}
-      <rect x="40" y="118" width="80" height="100" rx="2" fill="#0d0820" stroke="#aa00ff55" strokeWidth="1" />
-      {/* Pants crease */}
-      <line x1="65" y1="118" x2="65" y2="218" stroke="#aa00ff" strokeWidth="0.5" opacity="0.4" />
-      <line x1="95" y1="118" x2="95" y2="218" stroke="#aa00ff" strokeWidth="0.5" opacity="0.4" />
-      {/* Belt */}
-      <rect x="40" y="116" width="80" height="8" rx="2" fill="#1a0a2a" stroke="#aa00ff" strokeWidth="1" />
-      <rect x="75" y="116" width="10" height="8" rx="1" fill="#aa00ff" opacity="0.8" />
-      {/* Shoes */}
-      <ellipse cx="60" cy="218" rx="22" ry="8" fill="#0a0510" stroke="#aa00ff55" strokeWidth="1" />
-      <ellipse cx="100" cy="218" rx="22" ry="8" fill="#0a0510" stroke="#aa00ff55" strokeWidth="1" />
-      {/* Neon glow outline on jacket */}
-      <polygon points="45,0 10,10 10,120 55,120 55,60" fill="none" stroke="#aa00ff" strokeWidth="0.5" opacity="0.5" />
-      <polygon points="115,0 150,10 150,120 105,120 105,60" fill="none" stroke="#aa00ff" strokeWidth="0.5" opacity="0.5" />
-    </svg>
-    <div style={{ color: '#aa00ff', fontSize: '0.6rem', letterSpacing: '3px', textTransform: 'uppercase', textShadow: '0 0 8px #aa00ff', marginTop: '-10px' }}>THE DEALER</div>
-  </div>
-);
-
-// Neon lights panel for right side
-const NeonLights = () => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', padding: '2rem 0.5rem' }}>
-    <style>{`
-      @keyframes neonPulse1 { 0%,100%{opacity:1;box-shadow:0 0 8px #aa00ff,0 0 20px #aa00ff,0 0 40px #aa00ff} 50%{opacity:0.4;box-shadow:0 0 4px #aa00ff,0 0 8px #aa00ff} }
-      @keyframes neonPulse2 { 0%,100%{opacity:0.4;box-shadow:0 0 4px #ff00ff,0 0 8px #ff00ff} 50%{opacity:1;box-shadow:0 0 8px #ff00ff,0 0 20px #ff00ff,0 0 40px #ff00ff} }
-      @keyframes neonPulse3 { 0%,100%{opacity:1;box-shadow:0 0 8px #cc00ff,0 0 20px #cc00ff} 33%{opacity:0.3} 66%{opacity:0.8} }
-      @keyframes neonFlicker { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.2} 94%{opacity:1} 97%{opacity:0.4} 98%{opacity:1} }
-      @keyndef neonSign { 0%,100%{text-shadow:0 0 10px #aa00ff,0 0 20px #aa00ff,0 0 40px #aa00ff} 50%{text-shadow:0 0 5px #aa00ff,0 0 10px #aa00ff} }
-    `}</style>
-
-    {/* Vertical neon tube 1 */}
-    <div style={{ width: '8px', height: '120px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse1 1.8s ease-in-out infinite' }} />
-
-    {/* Diamond shape */}
-    <div style={{ width: '24px', height: '24px', background: '#aa00ff', transform: 'rotate(45deg)', animation: 'neonPulse2 1.2s ease-in-out infinite', borderRadius: '3px' }} />
-
-    {/* Vertical neon tube 2 */}
-    <div style={{ width: '8px', height: '80px', background: 'linear-gradient(180deg, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse2 2.1s ease-in-out infinite' }} />
-
-    {/* Circle */}
+const NeonPanel = ({ flip }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2rem', padding: '2rem 0.5rem' }}>
+    <div style={{ width: '8px', height: '100px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse1 1.8s ease-in-out infinite' }} />
+    <div style={{ width: '24px', height: '24px', background: '#aa00ff', transform: 'rotate(45deg)', borderRadius: '3px', animation: 'neonPulse2 1.2s ease-in-out infinite' }} />
+    <div style={{ width: '8px', height: '70px', background: 'linear-gradient(180deg, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse2 2.1s ease-in-out infinite' }} />
+    <div style={{ fontSize: '1.8rem', color: '#aa00ff', animation: flip ? 'neonPulse2 2.3s ease-in-out infinite' : 'neonPulse1 2.3s ease-in-out infinite', textShadow: '0 0 10px #aa00ff, 0 0 20px #aa00ff' }}>♠</div>
     <div style={{ width: '30px', height: '30px', borderRadius: '50%', border: '4px solid #cc00ff', animation: 'neonPulse3 1.5s ease-in-out infinite' }} />
-
-    {/* Vertical neon tube 3 */}
-    <div style={{ width: '8px', height: '100px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff, #cc00ff)', borderRadius: '4px', animation: 'neonPulse3 1.9s ease-in-out infinite' }} />
-
-    {/* Playing card suit neon signs */}
-    <div style={{ fontSize: '1.8rem', color: '#aa00ff', animation: 'neonPulse1 2.3s ease-in-out infinite', textShadow: '0 0 10px #aa00ff, 0 0 20px #aa00ff' }}>♠</div>
-    <div style={{ fontSize: '1.8rem', color: '#ff00ff', animation: 'neonPulse2 1.7s ease-in-out infinite', textShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff' }}>♥</div>
+    <div style={{ fontSize: '1.8rem', color: '#ff00ff', animation: flip ? 'neonPulse1 1.7s ease-in-out infinite' : 'neonPulse2 1.7s ease-in-out infinite', textShadow: '0 0 10px #ff00ff, 0 0 20px #ff00ff' }}>♥</div>
+    <div style={{ width: '8px', height: '90px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff, #cc00ff)', borderRadius: '4px', animation: 'neonPulse3 1.9s ease-in-out infinite' }} />
     <div style={{ fontSize: '1.8rem', color: '#cc00ff', animation: 'neonFlicker 3s ease-in-out infinite', textShadow: '0 0 10px #cc00ff, 0 0 20px #cc00ff' }}>♦</div>
-    <div style={{ fontSize: '1.8rem', color: '#aa00ff', animation: 'neonPulse3 2s ease-in-out infinite', textShadow: '0 0 10px #aa00ff, 0 0 20px #aa00ff' }}>♣</div>
-
-    {/* Vertical neon tube 4 */}
-    <div style={{ width: '8px', height: '80px', background: 'linear-gradient(180deg, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse1 2.5s ease-in-out infinite' }} />
-
-    {/* Triangle */}
-    <div style={{ width: 0, height: 0, borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderBottom: '22px solid #aa00ff', filter: 'drop-shadow(0 0 6px #aa00ff) drop-shadow(0 0 12px #aa00ff)', animation: 'neonPulse2 1.4s ease-in-out infinite' }} />
-
-    {/* Vertical neon tube 5 */}
-    <div style={{ width: '8px', height: '120px', background: 'linear-gradient(180deg, #aa00ff, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse3 1.6s ease-in-out infinite' }} />
+    <div style={{ width: '0', height: '0', borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderBottom: '22px solid #aa00ff', filter: 'drop-shadow(0 0 6px #aa00ff)', animation: 'neonPulse2 1.4s ease-in-out infinite' }} />
+    <div style={{ fontSize: '1.8rem', color: '#aa00ff', animation: flip ? 'neonPulse2 2s ease-in-out infinite' : 'neonPulse3 2s ease-in-out infinite', textShadow: '0 0 10px #aa00ff, 0 0 20px #aa00ff' }}>♣</div>
+    <div style={{ width: '8px', height: '100px', background: 'linear-gradient(180deg, #ff00ff, #aa00ff)', borderRadius: '4px', animation: 'neonPulse1 2.5s ease-in-out infinite' }} />
   </div>
 );
 
@@ -294,8 +209,7 @@ export default function App() {
 
   const dealGame = () => {
     const betNum = parseFloat(bet);
-    const sessionNum = parseFloat(sessionBalance);
-    if (betNum > sessionNum) { setStatus('Insufficient session balance.'); return; }
+    if (betNum > parseFloat(sessionBalance)) { setStatus('Insufficient session balance.'); return; }
     setResults(null); setStatus(''); setSplitCards(null); setActiveHand(0);
     const newDeck = createDeck();
     const p = [newDeck[0], newDeck[2]];
@@ -327,8 +241,7 @@ export default function App() {
   };
 
   const doDoubleDown = () => {
-    const sessionNum = parseFloat(sessionBalance);
-    if (currentBet > sessionNum) { setStatus('Insufficient session balance to double.'); return; }
+    if (currentBet > parseFloat(sessionBalance)) { setStatus('Insufficient session balance to double.'); return; }
     setSessionBalance(prev => (parseFloat(prev) - currentBet).toFixed(2));
     const newCard = deck[0]; const remaining = deck.slice(1); setDeck(remaining);
     const newBet = currentBet * 2; setCurrentBet(newBet);
@@ -343,8 +256,7 @@ export default function App() {
   };
 
   const doSplit = () => {
-    const sessionNum = parseFloat(sessionBalance);
-    if (currentBet > sessionNum) { setStatus('Insufficient session balance to split.'); return; }
+    if (currentBet > parseFloat(sessionBalance)) { setStatus('Insufficient session balance to split.'); return; }
     setSessionBalance(prev => (parseFloat(prev) - currentBet).toFixed(2));
     const newCard1 = deck[0]; const newCard2 = deck[1]; const remaining = deck.slice(2);
     setDeck(remaining);
@@ -379,10 +291,8 @@ export default function App() {
   const S = {
     app: {
       minHeight: '100vh', background: '#050510', color: '#e0e0ff',
-      fontFamily: "'Courier New', monospace",
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      padding: mobile ? '1rem' : '1rem 1rem 1rem 1rem',
-      position: 'relative', overflow: 'hidden',
+      fontFamily: "'Courier New', monospace", display: 'flex', flexDirection: 'column',
+      alignItems: 'center', padding: '1rem', position: 'relative', overflow: 'hidden',
     },
     scanlines: {
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -467,7 +377,6 @@ export default function App() {
 
   const mainContent = (
     <>
-      {/* Result overlay */}
       {results && gameState === GAME_STATE.FINISHED && (
         <div style={S.resultOverlay} onClick={() => setResults(null)}>
           {results.map((r, i) => (
@@ -481,7 +390,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Acknowledgement */}
       {!acknowledged ? (
         <div style={S.section}>
           <div style={S.sectionLabel}>◈ Before You Play</div>
@@ -511,7 +419,6 @@ export default function App() {
         </div>
       ) : (
         <>
-          {/* Wallet bar */}
           <div style={{ ...S.section, padding: '0.5rem 1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ color: '#00ffcc', fontSize: '0.7rem', letterSpacing: '2px' }}>✅ {walletAddress.slice(0,6)}...{walletAddress.slice(-4)}</div>
@@ -640,26 +547,22 @@ export default function App() {
       </div>
 
       {mobile ? (
-        // Mobile — simple centered layout
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           {mainContent}
         </div>
       ) : (
-        // Desktop — three column layout
         <div style={{ display: 'flex', width: '100%', maxWidth: '1100px', gap: '1rem', alignItems: 'flex-start', justifyContent: 'center' }}>
-          {/* Left — Franken dealer */}
-          <div style={{ width: '180px', flexShrink: 0, display: 'flex', justifyContent: 'center', paddingTop: '1rem', position: 'sticky', top: '1rem' }}>
-            <FrankenDealer logoSrc={frankenLogo} />
+          {/* Left neons */}
+          <div style={{ width: '70px', flexShrink: 0, position: 'sticky', top: '1rem' }}>
+            <NeonPanel flip={false} />
           </div>
-
-          {/* Centre — game */}
+          {/* Centre game */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
             {mainContent}
           </div>
-
-          {/* Right — neon lights */}
-          <div style={{ width: '80px', flexShrink: 0, display: 'flex', justifyContent: 'center', position: 'sticky', top: '1rem' }}>
-            <NeonLights />
+          {/* Right neons */}
+          <div style={{ width: '70px', flexShrink: 0, position: 'sticky', top: '1rem' }}>
+            <NeonPanel flip={true} />
           </div>
         </div>
       )}
