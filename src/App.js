@@ -92,6 +92,10 @@ function getResultObj(pCards, dCards, betAmount) {
 const GAME_STATE = { IDLE: 'idle', PLAYING: 'playing', SPLIT_PLAYING: 'split_playing', FINISHED: 'finished' };
 
 export default function App() {
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [ageCheck, setAgeCheck] = useState(false);
+  const [entertainmentCheck, setEntertainmentCheck] = useState(false);
+
   const [walletAddress, setWalletAddress] = useState(null);
   const [contract, setContract] = useState(null);
   const [houseBalance, setHouseBalance] = useState('0');
@@ -105,11 +109,11 @@ export default function App() {
   const [deck, setDeck] = useState([]);
   const [playerCards, setPlayerCards] = useState([]);
   const [dealerCards, setDealerCards] = useState([]);
-  const [splitCards, setSplitCards] = useState(null); // second hand when split
-  const [activeHand, setActiveHand] = useState(0); // 0 = main, 1 = split
+  const [splitCards, setSplitCards] = useState(null);
+  const [activeHand, setActiveHand] = useState(0);
   const [bet, setBet] = useState('1');
   const [currentBet, setCurrentBet] = useState(0);
-  const [results, setResults] = useState(null); // array of result objs
+  const [results, setResults] = useState(null);
   const [glitch, setGlitch] = useState(false);
 
   useEffect(() => {
@@ -185,8 +189,6 @@ export default function App() {
     setLoading(false);
   };
 
-  // ── Game logic ────────────────────────────────────────────────────────────
-
   const dealGame = () => {
     const betNum = parseFloat(bet);
     const sessionNum = parseFloat(sessionBalance);
@@ -218,11 +220,7 @@ export default function App() {
       const newHand = [...playerCards, newCard];
       setPlayerCards(newHand);
       if (handTotal(newHand) >= 21) {
-        if (splitCards !== null && gameState === GAME_STATE.SPLIT_PLAYING) {
-          // move to split hand — but we're on main already
-        }
         if (splitCards !== null) {
-          // main hand done, move to split
           setActiveHand(1);
           setGameState(GAME_STATE.SPLIT_PLAYING);
         } else {
@@ -298,21 +296,17 @@ export default function App() {
     setDealerCards(dHand);
     setDeck(d);
     setGameState(GAME_STATE.FINISHED);
-
     const mainResult = getResultObj(pCards, dHand, mainBet);
     const splitResult = sCards ? getResultObj(sCards, dHand, splitBet) : null;
-
     let totalPayout = mainResult.payout + (splitResult ? splitResult.payout : 0);
     if (totalPayout > 0) {
       setSessionBalance(prev => (parseFloat(prev) + totalPayout).toFixed(2));
     }
-
     setResults(splitResult ? [mainResult, splitResult] : [mainResult]);
   };
 
   const canSplit = gameState === GAME_STATE.PLAYING &&
-    playerCards.length === 2 &&
-    splitCards === null &&
+    playerCards.length === 2 && splitCards === null &&
     playerCards[0].value === playerCards[1].value &&
     parseFloat(sessionBalance) >= currentBet;
 
@@ -322,6 +316,7 @@ export default function App() {
 
   const hasSessionBalance = parseFloat(sessionBalance) > 0;
   const isPlaying = gameState === GAME_STATE.PLAYING || gameState === GAME_STATE.SPLIT_PLAYING;
+  const bothChecked = ageCheck && entertainmentCheck;
 
   const S = {
     app: {
@@ -400,6 +395,18 @@ export default function App() {
       background: 'rgba(0,0,10,0.85)', zIndex: 500,
       flexDirection: 'column', gap: '1rem', cursor: 'pointer',
     },
+    checkRow: {
+      display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+      marginBottom: '1rem', cursor: 'pointer',
+    },
+    checkbox: (checked) => ({
+      width: '20px', height: '20px', flexShrink: 0, marginTop: '2px',
+      border: `2px solid ${checked ? '#00ffcc' : '#444'}`,
+      borderRadius: '4px', background: checked ? 'rgba(0,255,200,0.2)' : 'transparent',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      cursor: 'pointer', transition: 'all 0.2s',
+      boxShadow: checked ? '0 0 10px #00ffcc55' : 'none',
+    }),
   };
 
   return (
@@ -431,7 +438,7 @@ export default function App() {
         )}
       </div>
 
-      {/* Result overlay — shows all hand results */}
+      {/* Result overlay */}
       {results && gameState === GAME_STATE.FINISHED && (
         <div style={S.resultOverlay} onClick={() => setResults(null)}>
           {results.map((r, i) => (
@@ -451,11 +458,45 @@ export default function App() {
         </div>
       )}
 
-      {!walletAddress ? (
+      {/* Acknowledgement screen */}
+      {!acknowledged ? (
+        <div style={S.section}>
+          <div style={S.sectionLabel}>◈ Before You Play</div>
+          <div style={{ color: '#666', fontSize: '0.75rem', letterSpacing: '2px', marginBottom: '1.5rem', lineHeight: '1.8' }}>
+            Please confirm the following before connecting your wallet.
+          </div>
+
+          <div style={S.checkRow} onClick={() => setAgeCheck(!ageCheck)}>
+            <div style={S.checkbox(ageCheck)}>
+              {ageCheck && <span style={{ color: '#00ffcc', fontSize: '0.8rem', fontWeight: 900 }}>✓</span>}
+            </div>
+            <div style={{ color: ageCheck ? '#e0e0ff' : '#666', fontSize: '0.82rem', letterSpacing: '1px', lineHeight: '1.6', transition: 'color 0.2s' }}>
+              I confirm that I am <span style={{ color: '#ffd700', fontWeight: 900 }}>18 years of age or older</span> (or 21 where required by local law) and that online gambling is legal in my jurisdiction.
+            </div>
+          </div>
+
+          <div style={S.checkRow} onClick={() => setEntertainmentCheck(!entertainmentCheck)}>
+            <div style={S.checkbox(entertainmentCheck)}>
+              {entertainmentCheck && <span style={{ color: '#00ffcc', fontSize: '0.8rem', fontWeight: 900 }}>✓</span>}
+            </div>
+            <div style={{ color: entertainmentCheck ? '#e0e0ff' : '#666', fontSize: '0.82rem', letterSpacing: '1px', lineHeight: '1.6', transition: 'color 0.2s' }}>
+              I understand that FrankenBet is a <span style={{ color: '#ffd700', fontWeight: 900 }}>decentralised application for entertainment purposes only</span>. Play responsibly.
+            </div>
+          </div>
+
+          <button
+            onClick={() => bothChecked && setAcknowledged(true)}
+            style={S.btn('#ff00ff', !bothChecked)}
+          >
+            {bothChecked ? '⚡ ENTER FRANKENBET' : '🔒 TICK BOTH TO CONTINUE'}
+          </button>
+        </div>
+      ) : !walletAddress ? (
         <div style={{ ...S.section, textAlign: 'center' }}>
           <div style={{ color: '#ff00ff', fontSize: '3rem', marginBottom: '1rem', textShadow: '0 0 20px #ff00ff' }}>🃏</div>
           <div style={{ color: '#00ffcc', letterSpacing: '3px', marginBottom: '1.5rem', fontSize: '0.85rem' }}>CONNECT YOUR WALLET TO PLAY</div>
           <button onClick={connectWallet} style={S.btn('#ff00ff', false)}>⚡ Connect Wallet</button>
+          {status && <div style={{ color: '#ff4444', fontSize: '0.75rem', marginTop: '0.75rem', letterSpacing: '2px' }}>⚡ {status}</div>}
         </div>
       ) : (
         <>
