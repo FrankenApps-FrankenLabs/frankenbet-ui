@@ -14,7 +14,7 @@ const SYMBOLS = [
 ];
 
 const REEL_COUNT = 5;
-const SPIN_MS = 1500; // animation duration before showing result
+const SPIN_MS = 1500;
 
 export default function Slots({ sessionBalance, setSessionBalance, onBack }) {
   const [displaySymbols, setDisplaySymbols] = useState(() =>
@@ -28,14 +28,12 @@ export default function Slots({ sessionBalance, setSessionBalance, onBack }) {
   const [serverReady, setServerReady] = useState(false);
   const animRef = useRef(null);
 
-  // Wake up Render on mount
   useEffect(() => {
     fetch(`${SERVER_URL}/api/health`)
       .then(() => setServerReady(true))
-      .catch(() => setServerReady(true)); // continue anyway
+      .catch(() => setServerReady(true));
   }, []);
 
-  // Reel animation — shuffle display symbols rapidly while spinning
   useEffect(() => {
     if (spinning) {
       animRef.current = setInterval(() => {
@@ -71,10 +69,8 @@ export default function Slots({ sessionBalance, setSessionBalance, onBack }) {
       });
       const data = await res.json();
 
-      // Wait for animation to finish
       await new Promise(r => setTimeout(r, SPIN_MS));
 
-      // Show final symbols
       setDisplaySymbols(data.symbols);
       setSpinning(false);
 
@@ -119,10 +115,18 @@ export default function Slots({ sessionBalance, setSessionBalance, onBack }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-      <div style={{ width: '100%', maxWidth: '640px', marginBottom: '1rem' }}>
-        <button onClick={onBack} style={{ background: 'transparent', border: '1px solid #444', color: '#666', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.7rem', cursor: 'pointer', letterSpacing: '3px', fontFamily: "'Courier New', monospace" }}>
+
+      {/* Top bar — back button + session balance */}
+      <div style={{ width: '100%', maxWidth: '640px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <button onClick={onBack} style={{ background: 'transparent', border: '1px solid #444', color: '#666', borderRadius: '6px', padding: '0.4rem 1rem', fontSize: '0.7rem', cursor: 'pointer', letterSpacing: '3px', fontFamily: "'Courier New', monospace", whiteSpace: 'nowrap' }}>
           ← LOBBY
         </button>
+        <div style={{ flex: 1, background: 'rgba(0,0,20,0.8)', border: '1px solid rgba(0,255,200,0.3)', borderRadius: '8px', padding: '0.5rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 10px rgba(0,255,200,0.1)' }}>
+          <span style={{ color: '#00ffcc', fontSize: '0.65rem', letterSpacing: '3px', textTransform: 'uppercase', textShadow: '0 0 8px #00ffcc', fontFamily: "'Courier New', monospace" }}>SESSION</span>
+          <span style={{ color: '#ffffff', fontSize: '1.1rem', fontWeight: 900, letterSpacing: '2px', fontFamily: "'Courier New', monospace", textShadow: '0 0 10px #00ffcc' }}>
+            {parseFloat(sessionBalance).toFixed(2)} LCAI
+          </span>
+        </div>
       </div>
 
       {!serverReady && (
