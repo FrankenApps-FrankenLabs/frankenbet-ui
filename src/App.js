@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserProvider, Contract, parseEther, formatEther } from 'ethers';
-import Lobby from './Lobby';
-import Blackjack from './Blackjack';
-import Slots from './Slots';
+import Lobby from './lobby';
+import Blackjack from './blackjack';
+import Slots from './slots';
 
 const CONTRACT_ADDRESS = '0xc486811E21E680AfdA637B477406C42d76b88959';
 const ABI = [
